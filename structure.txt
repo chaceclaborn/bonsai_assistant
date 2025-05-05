@@ -1,0 +1,60 @@
+bonsai_assistant/
+│
+├── README.md
+├── requirements.txt
+├── Dockerfile
+├── main.py
+│
+├── config/
+│   ├── __init__.py
+│   └── settings.py
+│
+├── hardware/
+│   ├── __init__.py
+│   ├── display/
+│   │   ├── __init__.py
+│   │   ├── rgb_display_driver.py
+│   ├── audio/
+│   │   ├── __init__.py
+│   │   ├── microphone.py
+│   │   └── speaker.py
+│   ├── sensors/
+│   │   ├── __init__.py
+│   │   ├── soil_moisture_sensor.py
+│   │   └── light_sensor.py
+│   └── actuators/
+│       ├── __init__.py
+│       └── pump_controller.py
+│
+├── core/
+│   ├── __init__.py
+│   ├── assistant.py
+│   └── speech_processing.py
+│
+├── services/
+│   ├── __init__.py
+│   └── ai_service.py
+│
+├── knowledge/
+│   ├── __init__.py
+│   ├── bonsai.py
+│   └── knowledge_base.py
+│
+├── models/
+│   ├── __init__.py
+│   └── lightweight_bonsai_model.py
+│
+├── utils/
+│   ├── __init__.py
+│   ├── text_processing.py
+│   ├── logging_utils.py
+│   └── file_utils.py
+│
+├── tests/
+│   ├── __init__.py
+│   ├── test_display.py
+│   ├── test_audio.py
+│   ├── test_assistant.py
+│
+└── logs/
+    └── assistant.log
