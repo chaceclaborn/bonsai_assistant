@@ -34,7 +34,6 @@ class PumpController:
                     self._total_runtime += time() - self._start_time
                 self._running = False
                 self._start_time = None
-                self._pulsing = False
                 print("🛑 Pump OFF")
 
     def run_timed(self, duration_sec):
@@ -52,6 +51,7 @@ class PumpController:
 
         def pulser():
             self._pulsing = True
+            print("🔁 Starting pulse loop")
             end_time = time() + total_duration
             while self._pulsing and time() < end_time:
                 self.turn_on()
@@ -65,6 +65,7 @@ class PumpController:
         self._pulse_thread.start()
 
     def stop_pulsing(self):
+        print("⛔ Stop pulse requested")
         self._pulsing = False
         self.turn_off()
 
@@ -78,3 +79,10 @@ class PumpController:
         if self._running and self._start_time:
             return round(self._total_runtime + (time() - self._start_time), 2)
         return round(self._total_runtime, 2)
+
+    def close(self):
+        print("🔌 Releasing GPIO resources")
+        try:
+            self.pump.close()
+        except Exception as e:
+            print(f"⚠️ Error closing pump: {e}")
