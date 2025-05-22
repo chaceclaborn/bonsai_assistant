@@ -1,61 +1,80 @@
-import time
+# File: hardware/actuators/pump_controller.py
 
-try:
-    import RPi.GPIO as GPIO
-except (ImportError, RuntimeError):
-    GPIO = None  # Not available
+import threading
+from time import time, sleep
+from gpiozero import OutputDevice
+from gpiozero.pins.lgpio import LGPIOFactory
+
 
 class PumpController:
-    def __init__(self, relay_pin=17):
-        self.status = "OFF"
-        self.total_runtime_sec = 0
-        self.connected = False
-        self.relay_pin = relay_pin
+    def __init__(self, gpio_pin=18):
+        factory = LGPIOFactory()
+        self.pump = OutputDevice(gpio_pin, active_high=True, initial_value=False, pin_factory=factory)
 
-        if GPIO is not None:
-            try:
-                GPIO.setmode(GPIO.BCM)
-                GPIO.setup(self.relay_pin, GPIO.OUT)
-                GPIO.output(self.relay_pin, GPIO.HIGH)
-                self.connected = True
-                print("✅ Pump relay ready.")
-            except Exception:
-                # Silent fallback to simulation if setup fails
-                self.connected = False
-        else:
-            # GPIO library not present
-            self.connected = False
+        self._start_time = None
+        self._total_runtime = 0.0
+        self._running = False
+        self._pulsing = False
+        self._pulse_thread = None
+        self._lock = threading.Lock()
 
     def turn_on(self):
-        if self.connected:
-            GPIO.output(self.relay_pin, GPIO.LOW)
-            self.status = "ON"
-        else:
-            self.status = "SIMULATED"
+        with self._lock:
+            if not self.pump.value:
+                self.pump.on()
+                self._start_time = time()
+                self._running = True
+                print("🚿 Pump ON")
 
     def turn_off(self):
-        if self.connected:
-            GPIO.output(self.relay_pin, GPIO.HIGH)
-            self.status = "OFF"
-        else:
-            self.status = "SIMULATED"
+        with self._lock:
+            if self.pump.value:
+                self.pump.off()
+                if self._running and self._start_time:
+                    self._total_runtime += time() - self._start_time
+                self._running = False
+                self._start_time = None
+                self._pulsing = False
+                print("🛑 Pump OFF")
 
-    def water_for(self, seconds):
-        if self.connected:
+    def run_timed(self, duration_sec):
+        def worker():
             self.turn_on()
-            time.sleep(seconds)
+            sleep(duration_sec)
             self.turn_off()
-        self.total_runtime_sec += seconds
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def start_pulsing(self, pulse_on=0.3125, pulse_off=0.3125, total_duration=15):
+        if self._pulsing:
+            print("⚠️ Already pulsing. Ignored.")
+            return
+
+        def pulser():
+            self._pulsing = True
+            end_time = time() + total_duration
+            while self._pulsing and time() < end_time:
+                self.turn_on()
+                sleep(pulse_on)
+                self.turn_off()
+                sleep(pulse_off)
+            self._pulsing = False
+            print("✅ Pulse sequence complete.")
+
+        self._pulse_thread = threading.Thread(target=pulser, daemon=True)
+        self._pulse_thread.start()
+
+    def stop_pulsing(self):
+        self._pulsing = False
+        self.turn_off()
+
+    def is_running(self):
+        return self._running or self._pulsing
 
     def get_status(self):
-        return self.status
+        return "ON" if self.is_running() else "OFF"
 
     def get_runtime_seconds(self):
-        return int(self.total_runtime_sec)
-
-
-if __name__ == "__main__":
-    pump = PumpController()
-    pump.water_for(3)
-    print(f"Pump status: {pump.get_status()}")
-    print(f"Runtime: {pump.get_runtime_seconds()} sec")
+        if self._running and self._start_time:
+            return round(self._total_runtime + (time() - self._start_time), 2)
+        return round(self._total_runtime, 2)

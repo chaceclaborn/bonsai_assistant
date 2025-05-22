@@ -1,2 +1,6 @@
 .venv/
 __pycache__/
+# Ignore logs except versioned config
+logs/irrigation_log.csv
+logs/service.log
+logs/assistant.log
