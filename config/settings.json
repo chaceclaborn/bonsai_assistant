@@ -1,0 +1,29 @@
+{
+  "sensor": {
+    "moisture_threshold": 30,
+    "sensor_warning_interval": 60,
+    "i2c_channel": 0,
+    "calibration_dry": 32000,
+    "calibration_wet": 12000
+  },
+  "pump": {
+    "gpio_pin": 18,
+    "initial_run_duration": 1.0,
+    "pulse_on_time": 0.3125,
+    "pulse_off_time": 0.3125,
+    "pulse_duration": 15.0,
+    "post_water_wait": 30
+  },
+  "display": {
+    "width": 128,
+    "height": 128,
+    "rotation": 180,
+    "update_interval": 1
+  },
+  "system": {
+    "refresh_interval_sec": 1,
+    "watering_cooldown_hours": 24,
+    "log_retention_days": 30,
+    "data_directory": "data"
+  }
+}
