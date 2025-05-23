@@ -4,3 +4,4 @@ __pycache__/
 logs/irrigation_log.csv
 logs/service.log
 logs/assistant.log
+.lgd-*
