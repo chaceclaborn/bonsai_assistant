@@ -1,350 +1,219 @@
-# 🌱 Bonsai Assistant Professional
+# 🌱 Bonsai Assistant Professional v2.0
 
-<div align="center">
+An intelligent automated plant care system designed specifically for bonsai trees, featuring real-time monitoring, automated watering, and a beautiful professional GUI.
 
-![Bonsai Assistant](https://img.shields.io/badge/Bonsai-Assistant-green.svg?style=for-the-badge)
-![Python](https://img.shields.io/badge/Python-3.8+-blue.svg?style=for-the-badge&logo=python)
-![Raspberry Pi](https://img.shields.io/badge/Raspberry-Pi-red.svg?style=for-the-badge&logo=raspberry-pi)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
+![Python](https://img.shields.io/badge/python-v3.9+-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-green.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-**An intelligent, automated plant care system with professional GUI and advanced monitoring capabilities**
+## 🌟 Features
 
-[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Hardware](#%EF%B8%8F-hardware-requirements) • [Screenshots](#-screenshots)
+### 🎯 Core Functionality
+- **Real-time Moisture Monitoring** - Continuous soil moisture tracking with color-coded alerts
+- **Intelligent Automated Watering** - Adaptive threshold-based watering with cooldown protection
+- **Professional GUI** - Beautiful tkinter interface with real-time charts and status displays
+- **OLED Display** - 128x128 RGB display showing moisture, pump status, and system health
+- **Data Logging** - SQLite database tracking moisture readings, watering events, and system logs
+- **Calibration Wizard** - Easy sensor calibration with step-by-step GUI
 
-</div>
+### 🎮 Control Features
+- **Manual Pump Control** - Direct on/off control with visual feedback
+- **Timed Watering** - Run pump for specific durations
+- **Pulse Watering** - Advanced water delivery in controlled bursts
+- **Simulation Mode** - Test without hardware using mock components
 
----
+### 📊 Monitoring & Analytics
+- **Real-time Dashboard** - Live moisture graphs and system status
+- **Historical Data** - View trends and watering history
+- **Daily Summaries** - Automated reporting of water usage and moisture levels
+- **Data Export** - Export readings to CSV for analysis
 
-## 🚀 Features
+## 🔧 Hardware Requirements
 
-### 🤖 **Intelligent Automation**
-- **Adaptive watering algorithms** that learn your plant's needs
-- **Multi-threshold monitoring** with emergency watering capabilities  
-- **24-hour cooldown protection** to prevent over-watering
-- **Scheduling system** for time-based watering routines
+### Essential Components
+- **Raspberry Pi** (3/4/5 recommended)
+- **ADS1115 ADC** - 16-bit analog-to-digital converter
+- **Capacitive Soil Moisture Sensor** - Corrosion-resistant sensor
+- **Water Pump** - 5V/12V submersible pump
+- **Relay Module** or **MOSFET** - For pump control
+- **SSD1351 OLED Display** - 128x128 RGB display (optional)
 
-### 📊 **Professional Dashboard**
-- **Real-time monitoring** with live moisture readings
-- **Mini status bars** on every tab for instant system visibility
-- **Historical data visualization** with trend analysis
-- **System diagnostics** with auto-refresh capabilities
+### Wiring Diagram
+```
+Raspberry Pi          ADS1115
+    3.3V     ------>    VDD
+    GND      ------>    GND
+    SCL      ------>    SCL
+    SDA      ------>    SDA
 
-### 🎛️ **Advanced Controls**
-- **Manual pump operations** with timed and pulse modes
-- **Live simulation testing** without hardware
-- **Inline configuration** - no popup windows!
-- **Hardware abstraction** supporting multiple sensor types
+ADS1115              Moisture Sensor
+    A0       ------>    Signal
+    3.3V     ------>    VCC
+    GND      ------>    GND
 
-### 💾 **Data Management**
-- **SQLite database** for persistent data storage
-- **Automated data retention** and cleanup
-- **Export capabilities** for external analysis
-- **Plant care journal** for notes and observations
+Raspberry Pi          Pump (via relay/MOSFET)
+    GPIO18   ------>    Control Signal
+    5V       ------>    Relay VCC
+    GND      ------>    Relay GND
+```
 
-### 🧪 **Development Features**
-- **Complete hardware simulation** for testing without sensors
-- **Hot-swappable components** (real ↔ simulation)
-- **Comprehensive logging** and error handling
-- **Professional code architecture** with separation of concerns
+## 🚀 Installation
 
----
-
-## 🛠️ Installation
-
-### **Prerequisites**
-- Raspberry Pi 4 (recommended) or any Linux system
-- Python 3.8 or higher
-- Git
-
-### **Quick Start**
-
+### 1. Clone the Repository
 ```bash
-# Clone the repository
 git clone https://github.com/yourusername/bonsai-assistant.git
 cd bonsai-assistant
+```
 
+### 2. System Setup
+```bash
+# Enable I2C
+sudo raspi-config
+# Navigate to: Interface Options → I2C → Enable
+
+# Install system dependencies
+sudo apt-get update
+sudo apt-get install -y python3-dev python3-pip python3-venv i2c-tools python3-pil python3-pil.imagetk
+```
+
+### 3. Python Environment
+```bash
 # Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+python3 -m venv venv
+source venv/bin/activate
 
-# Install dependencies
+# Install Python packages
 pip install -r requirements.txt
+```
 
-# Run the application
+### 4. Verify Hardware
+```bash
+# Check I2C devices
+sudo i2cdetect -y 1
+# Should show 48 for ADS1115
+
+# Test sensor connection
+python hardware/sensors/test_ads1115.py
+```
+
+## 📱 Usage
+
+### Starting the Application
+```bash
+source venv/bin/activate
 python main.py
 ```
 
-### **Hardware Setup** (Optional)
-If using real hardware, connect your components:
-- **Moisture Sensor**: ADS1115 ADC → I2C (pins 3,5)
-- **Water Pump**: Relay → GPIO 18
-- **OLED Display**: SSD1351 → SPI (CE0, pins 19,21,23)
+### First-Time Setup
+1. Go to **Settings** tab
+2. Scroll to **Sensor Calibration**
+3. Click **"Start Calibration Wizard"**
+4. Follow the steps:
+   - Dry calibration (sensor in air)
+   - Wet calibration (sensor in water)
 
----
+### Setting Moisture Threshold
+- **Juniper Bonsai**: 35-40% threshold
+- **Tropical Bonsai**: 45-55% threshold
+- **Adjust in Settings** → System Configuration
 
-## 🎮 Usage
+### Tabs Overview
+- **🏠 Dashboard** - Real-time monitoring and charts
+- **🎮 Controls** - Manual pump control and testing
+- **⚙️ Settings** - Configuration and calibration
 
-### **Getting Started**
-
-1. **Launch the application**:
-   ```bash
-   python main.py
-   ```
-
-2. **Test with simulation first**:
-   - Go to **Settings** tab
-   - Enable "Simulate Moisture Sensor"
-   - Drag moisture slider below 30%
-   - Watch automation trigger watering!
-
-3. **Configure for your plant**:
-   - Set moisture threshold (default: 30%)
-   - Adjust watering cooldown period
-   - Configure pump timing parameters
-
-### **Main Interface**
-
-#### 🏠 **Dashboard Tab**
-- Live system status with color-coded indicators
-- Real-time moisture readings and trends
-- Pump operation history and statistics
-- Recent activity log
-
-#### 🎮 **Controls Tab**  
-- Manual pump controls (ON/OFF/Timed)
-- Pulse watering with custom timing
-- Immediate status feedback
-- Operation confirmation
-
-#### ⚙️ **Settings Tab**
-- Live configuration updates (no save button needed!)
-- Hardware simulation controls with presets
-- System tools (cooldown reset, data cleanup)
-- Real-time hardware status display
-
-#### 🔧 **Diagnostics Tab**
-- Comprehensive system status report
-- Auto-refreshing every 5 seconds
-- Hardware connection status
-- Database and automation statistics
-
----
-
-## 🔧️ Hardware Requirements
-
-### **Minimum Setup**
-- Raspberry Pi (any model with GPIO)
-- MicroSD card (16GB+)
-- Power supply
-
-### **Complete Hardware Kit**
-| Component | Purpose | Connection |
-|-----------|---------|------------|
-| **ADS1115 ADC** | Moisture sensor interface | I2C (SDA/SCL) |
-| **Capacitive Soil Sensor** | Moisture detection | Analog → ADS1115 |
-| **5V Water Pump** | Plant watering | Relay → GPIO 18 |
-| **5V Relay Module** | Pump control | GPIO 18 |
-| **SSD1351 OLED Display** | Status display | SPI (CE0) |
-| **Jumper Wires** | Connections | Various |
-| **Breadboard** | Prototyping | - |
-
-### **Wiring Diagram**
+## 📁 Project Structure
 ```
-Raspberry Pi 4
-├── I2C (Pins 3,5) → ADS1115 → Soil Sensor
-├── GPIO 18 → Relay → Water Pump  
-├── SPI CE0 → OLED Display
-└── 5V/GND → Power Distribution
+bonsai-assistant/
+├── main.py                 # Main application entry
+├── requirements.txt        # Python dependencies
+├── config/
+│   ├── app_config.py      # Configuration management
+│   └── settings.json      # User settings (auto-created)
+├── core/
+│   ├── automation_controller.py
+│   ├── data_manager.py
+│   └── timing.py
+├── hardware/
+│   ├── sensors/
+│   │   └── soil_moisture_sensor.py
+│   ├── actuators/
+│   │   └── pump_controller.py
+│   └── display/
+│       └── rgb_display_driver.py
+├── ui/
+│   ├── dashboard_tab.py
+│   ├── mini_status_widget.py
+│   └── professional_theme.py
+├── simulation/           # Mock components for testing
+│   ├── mock_sensor.py
+│   ├── mock_pump.py
+│   └── mock_display.py
+└── data/                # Auto-created data directory
+    └── bonsai_data.db   # SQLite database
 ```
-
----
-
-## 📸 Screenshots
-
-### Dashboard Overview
-> Professional interface with real-time monitoring and mini status bars
-
-### Settings Panel  
-> Live configuration with hardware simulation controls
-
-### Diagnostics View
-> Comprehensive system status with auto-refresh
-
-*Screenshots coming soon - submit yours via Issues!*
-
----
 
 ## ⚙️ Configuration
 
-### **Environment Variables**
-```bash
-# Optional configuration
-export BONSAI_MOISTURE_THRESHOLD=30
-export BONSAI_COOLDOWN_HOURS=24
-export BONSAI_LOG_LEVEL=INFO
-```
-
-### **Configuration File**
-Settings are automatically saved to `config/settings.json`:
-
+### Default Settings (settings.json)
 ```json
 {
   "sensor": {
-    "moisture_threshold": 30,
-    "i2c_channel": 0,
+    "moisture_threshold": 35,
     "calibration_dry": 32000,
     "calibration_wet": 12000
   },
   "pump": {
-    "gpio_pin": 18,
+    "pulse_duration": 15.0,
     "pulse_on_time": 0.3125,
-    "pulse_off_time": 0.3125,
-    "pulse_duration": 15.0
+    "pulse_off_time": 0.3125
   },
   "system": {
-    "watering_cooldown_hours": 24,
-    "log_retention_days": 30
+    "watering_cooldown_hours": 24
   }
 }
 ```
 
----
+## 🛠️ Troubleshooting
 
-## 🏗️ Architecture
+### Sensor Reading 100% or 0%
+- Run calibration wizard
+- Check wiring connections
+- Verify sensor placement (only probes in soil)
 
-```
-bonsai-assistant/
-├── 🎯 main.py                    # Application entry point
-├── 🔧 hardware/                  # Hardware abstraction layer
-│   ├── sensors/                  # Moisture, light sensors
-│   ├── actuators/               # Pump controllers  
-│   └── display/                 # OLED display drivers
-├── 🧠 core/                     # Business logic
-│   ├── automation_controller.py # Smart watering logic
-│   ├── data_manager.py         # Database operations
-│   └── timing.py               # Cooldown management
-├── 🎨 ui/                       # User interface
-│   ├── dashboard_tab.py        # Main dashboard
-│   └── mini_status_widget.py   # Status indicators
-├── ⚙️ config/                   # Configuration management
-├── 🧪 simulation/               # Hardware simulation
-├── 💾 data/                     # SQLite database
-└── 📋 requirements.txt          # Python dependencies
-```
+### Display Not Working
+- Check SPI connections
+- Verify display rotation in settings
+- Try simulation mode first
 
----
-
-## 🔄 Development
-
-### **Running Tests**
-```bash
-# Run with simulation enabled
-python main.py
-
-# Test automation logic
-python -c "from core.automation_controller import AutomationController; print('Tests pass!')"
-```
-
-### **Adding Features**
-1. **Hardware**: Add new sensors to `hardware/sensors/`
-2. **UI**: Create new tabs in `ui/`
-3. **Logic**: Extend `core/automation_controller.py`
-4. **Data**: Add tables via `core/data_manager.py`
-
-### **Code Style**
-- Follow PEP 8 formatting
-- Use type hints where possible
-- Add docstrings to public methods
-- Maintain hardware abstraction
-
----
+### Pump Not Responding
+- Check GPIO permissions: `sudo usermod -a -G gpio $USER`
+- Verify relay/MOSFET wiring
+- Test with manual control first
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how to help:
-
-### **Bug Reports**
-- Use GitHub Issues
-- Include system info (Pi model, Python version)
-- Provide steps to reproduce
-- Include error messages/logs
-
-### **Feature Requests**
-- Describe the use case
-- Explain expected behavior
-- Consider hardware requirements
-
-### **Pull Requests**
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
-
----
-
-## 📈 Roadmap
-
-### **v2.1 - Smart Features**
-- [ ] Weather integration for watering decisions
-- [ ] Mobile app notifications (Pushover/Telegram)
-- [ ] Machine learning for optimal watering prediction
-- [ ] Multi-plant support with individual profiles
-
-### **v2.2 - Advanced Hardware**
-- [ ] Camera integration for plant health monitoring
-- [ ] Light sensor for grow light automation
-- [ ] pH sensor integration
-- [ ] Temperature/humidity monitoring
-
-### **v2.3 - Cloud & Analytics**
-- [ ] Cloud data backup
-- [ ] Advanced analytics dashboard
-- [ ] Plant care recommendations
-- [ ] Community plant database
-
----
-
-## 🛡️ Safety & Disclaimers
-
-- ⚠️ **Electrical Safety**: Always disconnect power when wiring
-- 💧 **Water Safety**: Keep electronics away from water
-- 🔌 **Power Ratings**: Verify pump power requirements
-- 🌱 **Plant Health**: Monitor your plants - automation supplements, doesn't replace care
-- 📖 **No Warranty**: Use at your own risk
-
----
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
-- **Adafruit** - For excellent hardware libraries and documentation
-- **Raspberry Pi Foundation** - For the amazing Pi ecosystem  
-- **Python Community** - For tkinter, sqlite3, and countless other libraries
-- **Plant Parents Everywhere** - For inspiring automated plant care solutions
+- Adafruit for excellent hardware libraries
+- The Raspberry Pi Foundation
+- The bonsai community for inspiration
+
+## 📧 Contact
+
+Your Name - [@yourtwitter](https://twitter.com/yourtwitter)
+
+Project Link: [https://github.com/yourusername/bonsai-assistant](https://github.com/yourusername/bonsai-assistant)
 
 ---
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/bonsai-assistant/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/bonsai-assistant/discussions)
-- **Wiki**: [Project Wiki](https://github.com/yourusername/bonsai-assistant/wiki)
-
----
-
-<div align="center">
-
-**Made with 🌱 for plant lovers everywhere**
-
-![GitHub stars](https://img.shields.io/github/stars/yourusername/bonsai-assistant?style=social)
-![GitHub forks](https://img.shields.io/github/forks/yourusername/bonsai-assistant?style=social)
-
-*Star this project if it helped your plants thrive! 🌟*
-
-</div>
+Made with 💚 for the bonsai community

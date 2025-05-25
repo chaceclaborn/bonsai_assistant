@@ -1,10 +1,10 @@
 {
   "sensor": {
-    "moisture_threshold": 30,
+    "moisture_threshold": 22,
     "sensor_warning_interval": 60,
     "i2c_channel": 0,
-    "calibration_dry": 32000,
-    "calibration_wet": 12000
+    "calibration_dry": 17612,
+    "calibration_wet": 7309
   },
   "pump": {
     "gpio_pin": 18,

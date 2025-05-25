@@ -1,10 +1,13 @@
-# File: main.py - Fixed Controls Layout and Mock Switching
+# File: main.py - Fixed Controls Layout, Mock Switching, OLED Display, and Better Layout
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import threading
+import time
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
+from pathlib import Path
 
 # Hardware components
 from hardware.display.rgb_display_driver import RGBDisplayDriver
@@ -41,11 +44,12 @@ class ImprovedControlsTab:
         
         self.frame = ttk.Frame(parent)
         self.frame.configure(style='TFrame')
+        self._canvas = None  # Store canvas reference
         self._create_controls()
     
     def _create_controls(self):
         """Create improved controls interface with proper scrolling"""
-        # Main container
+        # Main container - FIXED: fill entire space
         main_container = ttk.Frame(self.frame)
         main_container.pack(fill="both", expand=True, padx=BonsaiTheme.SPACING['lg'], 
                            pady=BonsaiTheme.SPACING['md'])
@@ -58,41 +62,87 @@ class ImprovedControlsTab:
         self._create_scrollable_controls(main_container)
     
     def _create_scrollable_controls(self, parent):
-        """Create scrollable controls area"""
+        """Create scrollable controls area - PROFESSIONALLY ALIGNED"""
         # Canvas for scrolling
         canvas = tk.Canvas(parent, bg=BonsaiTheme.COLORS['bg_main'], highlightthickness=0)
         scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        # Store canvas reference
+        self._canvas = canvas
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        # Configure canvas
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        
+        def configure_canvas(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            # Make frame fill canvas width
+            if event:
+                canvas.itemconfig(canvas_window, width=event.width)
+        
+        canvas.bind('<Configure>', configure_canvas)
+        scrollable_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        # Pack canvas and scrollbar
+        # Pack widgets
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Enable mouse wheel scrolling
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        # Focus management for scrolling
+        def on_frame_enter(event):
+            canvas.focus_set()
         
-        # Create sections with proper spacing
-        self._create_manual_controls_section(scrollable_frame)
-        self._create_timed_operations_section(scrollable_frame)
-        self._create_pulse_controls_section(scrollable_frame)
-        self._create_system_info_section(scrollable_frame)
+        canvas.bind("<Enter>", on_frame_enter)
+        scrollable_frame.bind("<Enter>", on_frame_enter)
+        
+        # Create content with PROFESSIONAL GRID LAYOUT
+        content_container = ttk.Frame(scrollable_frame)
+        content_container.pack(fill="both", expand=True, padx=BonsaiTheme.SPACING['md'])
+        
+        # PROFESSIONAL LAYOUT: Create rows for better alignment
+        # Row 1: Manual Controls | Timed Operations
+        row1_frame = ttk.Frame(content_container)
+        row1_frame.pack(fill="x", pady=(0, BonsaiTheme.SPACING['lg']))
+        
+        # Configure grid weights for equal column widths
+        row1_frame.columnconfigure(0, weight=1, uniform="col")
+        row1_frame.columnconfigure(1, weight=1, uniform="col")
+        
+        # Row 1 sections
+        manual_container = ttk.Frame(row1_frame)
+        manual_container.grid(row=0, column=0, sticky="nsew", padx=(0, BonsaiTheme.SPACING['md']))
+        
+        timed_container = ttk.Frame(row1_frame)
+        timed_container.grid(row=0, column=1, sticky="nsew", padx=(BonsaiTheme.SPACING['md'], 0))
+        
+        self._create_manual_controls_section(manual_container)
+        self._create_timed_operations_section(timed_container)
+        
+        # Row 2: Pulse Controls | System Info
+        row2_frame = ttk.Frame(content_container)
+        row2_frame.pack(fill="x")
+        
+        # Configure grid weights for equal column widths
+        row2_frame.columnconfigure(0, weight=1, uniform="col")
+        row2_frame.columnconfigure(1, weight=1, uniform="col")
+        
+        # Row 2 sections
+        pulse_container = ttk.Frame(row2_frame)
+        pulse_container.grid(row=0, column=0, sticky="nsew", padx=(0, BonsaiTheme.SPACING['md']))
+        
+        system_container = ttk.Frame(row2_frame)
+        system_container.grid(row=0, column=1, sticky="nsew", padx=(BonsaiTheme.SPACING['md'], 0))
+        
+        self._create_pulse_controls_section(pulse_container)
+        self._create_system_info_section(system_container)
     
     def _create_manual_controls_section(self, parent):
         """Create manual controls with proper spacing"""
         create_section_header(parent, "🎮 Manual Pump Controls", 1)
         
         controls_card = create_professional_card(parent, "Direct Pump Operation")
-        controls_card.pack(fill="x", pady=(0, BonsaiTheme.SPACING['xl']))
+        controls_card.pack(fill="both", expand=True, pady=(0, 0))
         
         # Current status - larger display
         status_frame = ttk.Frame(controls_card)
@@ -140,13 +190,14 @@ class ImprovedControlsTab:
         create_section_header(parent, "⏱️ Timed Operations", 1)
         
         timed_card = create_professional_card(parent, "Scheduled Pump Control")
-        timed_card.pack(fill="x", pady=(0, BonsaiTheme.SPACING['xl']))
+        timed_card.pack(fill="both", expand=True, pady=(0, 0))
         
         # Description
         desc_label = ttk.Label(timed_card, 
                               text="Run the pump for a specific duration with automatic shutoff",
                               font=BonsaiTheme.FONTS['body'],
-                              foreground=BonsaiTheme.COLORS['text_muted'])
+                              foreground=BonsaiTheme.COLORS['text_muted'],
+                              wraplength=400)
         desc_label.pack(anchor="w", pady=(0, BonsaiTheme.SPACING['lg']))
         
         # Duration control - larger and better spaced
@@ -201,12 +252,12 @@ class ImprovedControlsTab:
         create_section_header(parent, "🔄 Advanced Pulse Watering", 1)
         
         pulse_card = create_professional_card(parent, "Intelligent Pulse System")
-        pulse_card.pack(fill="x", pady=(0, BonsaiTheme.SPACING['xl']))
+        pulse_card.pack(fill="both", expand=True, pady=(0, 0))
         
         # Description
         desc_text = ("Pulse watering delivers water in controlled bursts for optimal soil absorption. "
                     "This prevents runoff and ensures deep root hydration.")
-        desc_label = ttk.Label(pulse_card, text=desc_text, wraplength=600,
+        desc_label = ttk.Label(pulse_card, text=desc_text, wraplength=400,
                               font=BonsaiTheme.FONTS['body'],
                               foreground=BonsaiTheme.COLORS['text_muted'])
         desc_label.pack(anchor="w", pady=(0, BonsaiTheme.SPACING['lg']))
@@ -278,7 +329,7 @@ class ImprovedControlsTab:
         create_section_header(parent, "📊 System Information", 1)
         
         info_card = create_professional_card(parent, "Real-time System Status")
-        info_card.pack(fill="x", pady=(0, BonsaiTheme.SPACING['xl']))
+        info_card.pack(fill="both", expand=True, pady=(0, 0))
         
         # System metrics
         self.system_info = create_info_panel(info_card, "Current Status", {
@@ -447,9 +498,56 @@ class FixedSettingsTab:
         self._create_settings()
     
     def _create_settings(self):
-        """Create settings interface with fixed mock switching"""
-        # Main container
-        main_container = ttk.Frame(self.frame)
+        """Create settings interface with fixed mock switching and scrolling"""
+        # Create scrollable container
+        canvas = tk.Canvas(self.frame, bg=BonsaiTheme.COLORS['bg_main'], highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        # Configure canvas
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        
+        def configure_canvas(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            # Make frame fill canvas width
+            if event:
+                canvas.itemconfig(canvas_window, width=event.width)
+        
+        canvas.bind('<Configure>', configure_canvas)
+        scrollable_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Bind mouse wheel scrolling
+        def _on_mousewheel(event):
+            if event.delta:
+                canvas.yview_scroll(-1*(event.delta//120), "units")
+            else:
+                if event.num == 4:
+                    canvas.yview_scroll(-1, "units")
+                elif event.num == 5:
+                    canvas.yview_scroll(1, "units")
+        
+        # Bind to canvas and frame
+        canvas.bind("<MouseWheel>", _on_mousewheel)  # Windows
+        canvas.bind("<Button-4>", _on_mousewheel)    # Linux
+        canvas.bind("<Button-5>", _on_mousewheel)    # Linux
+        scrollable_frame.bind("<MouseWheel>", _on_mousewheel)
+        scrollable_frame.bind("<Button-4>", _on_mousewheel)
+        scrollable_frame.bind("<Button-5>", _on_mousewheel)
+        
+        # Focus on mouse enter
+        def on_enter(event):
+            canvas.focus_set()
+        canvas.bind("<Enter>", on_enter)
+        scrollable_frame.bind("<Enter>", on_enter)
+        
+        # Main container inside scrollable frame
+        main_container = ttk.Frame(scrollable_frame)
         main_container.pack(fill="both", expand=True, padx=BonsaiTheme.SPACING['lg'], 
                            pady=BonsaiTheme.SPACING['md'])
         
@@ -457,7 +555,7 @@ class FixedSettingsTab:
         self.mini_status = MiniStatusWidget(main_container, self.app.automation, self.app.pump)
         self.mini_status.frame.pack(fill="x", pady=(0, BonsaiTheme.SPACING['lg']))
         
-        # Two column layout
+        # Two column layout - FIXED: expand to fill space
         columns_frame = ttk.Frame(main_container)
         columns_frame.pack(fill="both", expand=True)
         
@@ -476,6 +574,13 @@ class FixedSettingsTab:
         # Tools section at bottom
         add_separator(main_container)
         self._create_tools_section(main_container)
+        
+        # NEW: Calibration section - make sure it's visible
+        add_separator(main_container)
+        self._create_calibration_section(main_container)
+        
+        # Add some padding at bottom for scrolling
+        ttk.Frame(main_container).pack(pady=BonsaiTheme.SPACING['xl'])
     
     def _create_system_settings(self, parent):
         """Create system configuration settings"""
@@ -542,7 +647,7 @@ class FixedSettingsTab:
     def _create_fixed_simulation_controls(self, parent):
         """Create FIXED simulation controls"""
         sim_card = create_professional_card(parent, "🧪 Hardware Simulation")
-        sim_card.pack(fill="both", expand=True)
+        sim_card.pack(fill="both", expand=True, pady=(0, BonsaiTheme.SPACING['md']))
         
         # Hardware status display
         self.hardware_status_labels = {}
@@ -655,7 +760,9 @@ class FixedSettingsTab:
                     try:
                         self.app.sensor = SoilMoistureSensor(
                             channel=self.app.config.sensor.i2c_channel,
-                            debug=False
+                            debug=False,
+                            dry_calibration=self.app.config.sensor.calibration_dry,
+                            wet_calibration=self.app.config.sensor.calibration_wet
                         )
                         self._update_sim_status("✅ Switched to real sensor", "success")
                     except Exception as e:
@@ -886,22 +993,636 @@ class FixedSettingsTab:
     def _reset_cooldown(self):
         """Reset watering cooldown"""
         self.app.cooldown_manager.reset()
+        self._update_cal_status("✅ Cooldown timer reset! Watering available immediately.", "success")
         
     def _cleanup_data(self):
-        """Cleanup old data"""
-        try:
-            self.app.data_manager.cleanup_old_data(self.app.config.system.log_retention_days)
-        except Exception as e:
-            print(f"Cleanup error: {e}")
+        """Cleanup old data with user confirmation"""
+        # Create confirmation dialog
+        result = tk.messagebox.askyesno(
+            "Cleanup Data", 
+            f"This will remove moisture readings older than 7 days and logs older than {self.app.config.system.log_retention_days} days.\n\nContinue?",
+            parent=self.frame
+        )
+        
+        if result:
+            try:
+                # Get counts before cleanup
+                before_count = len(self.app.data_manager.get_moisture_history(hours=24*7))
+                
+                # Perform cleanup
+                self.app.data_manager.cleanup_old_data(self.app.config.system.log_retention_days)
+                
+                # Get counts after
+                after_count = len(self.app.data_manager.get_moisture_history(hours=24*7))
+                
+                # Show success message
+                tk.messagebox.showinfo(
+                    "Cleanup Complete",
+                    f"Database cleaned successfully!\n\nRemoved {before_count - after_count} old moisture readings.",
+                    parent=self.frame
+                )
+                
+                self._update_cal_status("✅ Database cleanup completed!", "success")
+                
+            except Exception as e:
+                tk.messagebox.showerror(
+                    "Cleanup Error",
+                    f"Error during cleanup: {str(e)}",
+                    parent=self.frame
+                )
+                self._update_cal_status(f"❌ Cleanup error: {str(e)}", "error")
     
     def _export_data(self):
-        """Export data"""
-        print("Export feature coming soon!")
+        """Export data to CSV files"""
+        from tkinter import filedialog
+        import csv
+        from datetime import datetime
+        
+        # Ask for directory
+        directory = filedialog.askdirectory(
+            title="Select Export Directory",
+            parent=self.frame
+        )
+        
+        if not directory:
+            return
+            
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # Export moisture data
+            moisture_file = Path(directory) / f"moisture_data_{timestamp}.csv"
+            moisture_history = self.app.data_manager.get_moisture_history(hours=24*30)  # 30 days
+            
+            with open(moisture_file, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Timestamp', 'Moisture %', 'Raw Value', 'Channel'])
+                for reading in moisture_history:
+                    writer.writerow([
+                        reading.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                        reading.moisture_percent,
+                        reading.raw_value,
+                        reading.sensor_channel
+                    ])
+            
+            # Export watering events
+            watering_file = Path(directory) / f"watering_events_{timestamp}.csv"
+            watering_history = self.app.data_manager.get_watering_history(days=30)
+            
+            with open(watering_file, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Timestamp', 'Duration (sec)', 'Trigger Moisture %', 'Type', 'Notes'])
+                for event in watering_history:
+                    writer.writerow([
+                        event.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                        event.duration_seconds,
+                        event.trigger_moisture,
+                        event.event_type,
+                        event.notes
+                    ])
+            
+            # Show success
+            tk.messagebox.showinfo(
+                "Export Complete",
+                f"Data exported successfully!\n\n📊 {moisture_file.name}\n💧 {watering_file.name}",
+                parent=self.frame
+            )
+            
+            self._update_cal_status("✅ Data exported successfully!", "success")
+            
+        except Exception as e:
+            tk.messagebox.showerror(
+                "Export Error", 
+                f"Error exporting data: {str(e)}",
+                parent=self.frame
+            )
+            self._update_cal_status(f"❌ Export error: {str(e)}", "error")
     
     def update_display(self):
         """Update settings display"""
         self.mini_status.update_display()
         self._update_hardware_status()
+    
+    def _create_calibration_section(self, parent):
+        """Create sensor calibration section"""
+        calibration_card = create_professional_card(parent, "🎯 Sensor Calibration")
+        calibration_card.pack(fill="x", pady=BonsaiTheme.SPACING['md'])
+        
+        # Info section
+        info_label = ttk.Label(calibration_card,
+                              text="Calibrate your moisture sensor for accurate readings. Each sensor is unique!",
+                              font=BonsaiTheme.FONTS['body'],
+                              foreground=BonsaiTheme.COLORS['text_muted'],
+                              wraplength=600)
+        info_label.pack(anchor="w", pady=(0, BonsaiTheme.SPACING['md']))
+        
+        # Current calibration values display
+        cal_frame = ttk.Frame(calibration_card)
+        cal_frame.pack(fill="x", pady=BonsaiTheme.SPACING['sm'])
+        
+        ttk.Label(cal_frame, text="Current Calibration:",
+                 font=BonsaiTheme.FONTS['body_bold'],
+                 foreground=BonsaiTheme.COLORS['text_primary']).pack(anchor="w")
+        
+        self.cal_info_frame = ttk.Frame(cal_frame)
+        self.cal_info_frame.pack(fill="x", padx=(BonsaiTheme.SPACING['md'], 0))
+        
+        # Create labels for current values
+        self.dry_cal_label = ttk.Label(self.cal_info_frame, text="",
+                                      font=BonsaiTheme.FONTS['body'])
+        self.dry_cal_label.pack(anchor="w")
+        
+        self.wet_cal_label = ttk.Label(self.cal_info_frame, text="",
+                                      font=BonsaiTheme.FONTS['body'])
+        self.wet_cal_label.pack(anchor="w")
+        
+        # Live sensor reading display
+        reading_frame = ttk.Frame(calibration_card)
+        reading_frame.pack(fill="x", pady=BonsaiTheme.SPACING['md'])
+        
+        ttk.Label(reading_frame, text="Live Sensor Reading:",
+                 font=BonsaiTheme.FONTS['body_bold'],
+                 foreground=BonsaiTheme.COLORS['text_primary']).pack(anchor="w")
+        
+        # Reading display with visual indicator
+        self.reading_display_frame = ttk.Frame(reading_frame)
+        self.reading_display_frame.pack(fill="x", pady=BonsaiTheme.SPACING['sm'])
+        
+        self.raw_reading_label = ttk.Label(self.reading_display_frame,
+                                          text="Raw ADC: -----",
+                                          font=BonsaiTheme.FONTS['mono'])
+        self.raw_reading_label.pack(side="left", padx=(BonsaiTheme.SPACING['md'], BonsaiTheme.SPACING['lg']))
+        
+        self.moisture_reading_label = ttk.Label(self.reading_display_frame,
+                                               text="Moisture: ---%",
+                                               font=BonsaiTheme.FONTS['heading_small'])
+        self.moisture_reading_label.pack(side="left")
+        
+        # Visual moisture bar
+        self.moisture_canvas = tk.Canvas(self.reading_display_frame,
+                                       width=200, height=20,
+                                       bg=BonsaiTheme.COLORS['bg_accent'],
+                                       highlightthickness=1,
+                                       highlightbackground=BonsaiTheme.COLORS['accent_green'])
+        self.moisture_canvas.pack(side="left", padx=(BonsaiTheme.SPACING['lg'], 0))
+        
+        # Calibration buttons
+        button_frame = ttk.Frame(calibration_card)
+        button_frame.pack(fill="x", pady=BonsaiTheme.SPACING['lg'])
+        
+        # Start calibration button
+        self.calibrate_button = create_action_button(
+            button_frame, 
+            "🔧 Start Calibration Wizard", 
+            self._start_calibration,
+            "primary"
+        )
+        self.calibrate_button.pack(side="left", padx=(0, BonsaiTheme.SPACING['md']))
+        
+        # Quick calibration info
+        quick_info = ttk.Label(button_frame,
+                              text="• Dry = sensor in air  • Wet = sensor in water",
+                              font=BonsaiTheme.FONTS['caption'],
+                              foreground=BonsaiTheme.COLORS['text_muted'])
+        quick_info.pack(side="left", padx=BonsaiTheme.SPACING['md'])
+        
+        # Status message
+        self.cal_status = ttk.Label(calibration_card, text="",
+                                   font=BonsaiTheme.FONTS['body'],
+                                   foreground=BonsaiTheme.COLORS['success'])
+        self.cal_status.pack(pady=BonsaiTheme.SPACING['sm'])
+        
+        # Update display initially
+        self._update_calibration_display()
+        
+        # Start live reading updates
+        self._update_live_reading()
+    
+    def _update_calibration_display(self):
+        """Update calibration values display"""
+        try:
+            config = self.app.config
+            self.dry_cal_label.config(
+                text=f"Dry (air): {config.sensor.calibration_dry} ADC"
+            )
+            self.wet_cal_label.config(
+                text=f"Wet (water): {config.sensor.calibration_wet} ADC"
+            )
+        except Exception as e:
+            print(f"Error updating calibration display: {e}")
+    
+    def _update_live_reading(self):
+        """Update live sensor reading display"""
+        try:
+            # Only update if we have a real sensor
+            if isinstance(self.app.sensor, MockSoilMoistureSensor):
+                self.raw_reading_label.config(text="Raw ADC: (Mock)")
+                self.moisture_reading_label.config(text="Moisture: (Mock)")
+                self.moisture_canvas.delete("all")
+            else:
+                # Get raw and percentage readings
+                raw = self.app.sensor.read_raw_adc()
+                moisture = self.app.sensor.read_moisture_percent()
+                
+                if raw is not None:
+                    self.raw_reading_label.config(text=f"Raw ADC: {raw:5d}")
+                else:
+                    self.raw_reading_label.config(text="Raw ADC: ERROR")
+                
+                if moisture is not None:
+                    self.moisture_reading_label.config(text=f"Moisture: {moisture:.1f}%")
+                    
+                    # Color based on moisture level
+                    if moisture < 20:
+                        color = BonsaiTheme.COLORS['error']
+                    elif moisture < 40:
+                        color = BonsaiTheme.COLORS['warning']
+                    elif moisture < 70:
+                        color = BonsaiTheme.COLORS['success']
+                    else:
+                        color = BonsaiTheme.COLORS['info']
+                    
+                    self.moisture_reading_label.config(foreground=color)
+                    
+                    # Draw moisture bar
+                    self.moisture_canvas.delete("all")
+                    bar_width = int((moisture / 100) * 190)
+                    self.moisture_canvas.create_rectangle(
+                        5, 5, 5 + bar_width, 15,
+                        fill=color, outline=""
+                    )
+                else:
+                    self.moisture_reading_label.config(text="Moisture: ---")
+                    self.moisture_canvas.delete("all")
+                    
+        except Exception as e:
+            print(f"Error updating live reading: {e}")
+        
+        # Schedule next update
+        self.frame.after(1000, self._update_live_reading)
+    
+    def _start_calibration(self):
+        """Start interactive calibration wizard"""
+        if isinstance(self.app.sensor, MockSoilMoistureSensor):
+            self._update_cal_status("❌ Cannot calibrate mock sensor! Enable real hardware first.", "error")
+            return
+        
+        # Create calibration window
+        cal_window = tk.Toplevel(self.frame)
+        cal_window.title("🎯 Sensor Calibration Wizard")
+        cal_window.geometry("600x500")
+        cal_window.transient(self.frame)
+        
+        # Make it modal
+        cal_window.grab_set()
+        
+        # Variables to store calibration values
+        self.cal_dry_values = []
+        self.cal_wet_values = []
+        self.cal_current_step = "intro"
+        
+        # Main container
+        main_frame = ttk.Frame(cal_window)
+        main_frame.pack(fill="both", expand=True, padx=BonsaiTheme.SPACING['lg'],
+                       pady=BonsaiTheme.SPACING['lg'])
+        
+        # Header
+        header_label = ttk.Label(main_frame, 
+                               text="🌱 Moisture Sensor Calibration",
+                               font=BonsaiTheme.FONTS['heading_medium'],
+                               foreground=BonsaiTheme.COLORS['primary_green'])
+        header_label.pack(pady=(0, BonsaiTheme.SPACING['lg']))
+        
+        # Content frame (will be updated for each step)
+        self.cal_content_frame = ttk.Frame(main_frame)
+        self.cal_content_frame.pack(fill="both", expand=True)
+        
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill="x", pady=(BonsaiTheme.SPACING['lg'], 0))
+        
+        self.cal_cancel_btn = ttk.Button(button_frame, text="Cancel",
+                                       command=cal_window.destroy)
+        self.cal_cancel_btn.pack(side="left")
+        
+        self.cal_next_btn = create_action_button(button_frame, "Next →",
+                                               lambda: self._cal_next_step(cal_window),
+                                               "primary")
+        self.cal_next_btn.pack(side="right")
+        
+        # Start with intro
+        self._show_cal_intro()
+    
+    def _show_cal_intro(self):
+        """Show calibration introduction"""
+        # Clear content
+        for widget in self.cal_content_frame.winfo_children():
+            widget.destroy()
+        
+        # Intro text
+        intro_text = """This wizard will help you calibrate your moisture sensor for accurate readings.
+
+You'll need:
+• Your moisture sensor (connected)
+• A paper towel or tissue
+• A glass of water
+
+The process takes about 2 minutes and involves:
+1. Reading the sensor when completely dry (in air)
+2. Reading the sensor when wet (in water)
+
+Ready to start?"""
+        
+        intro_label = ttk.Label(self.cal_content_frame, text=intro_text,
+                              font=BonsaiTheme.FONTS['body'],
+                              justify="left")
+        intro_label.pack(pady=BonsaiTheme.SPACING['lg'])
+        
+        self.cal_current_step = "intro"
+    
+    def _show_cal_dry(self):
+        """Show dry calibration step"""
+        for widget in self.cal_content_frame.winfo_children():
+            widget.destroy()
+        
+        # Instructions
+        ttk.Label(self.cal_content_frame, 
+                 text="Step 1: Dry Calibration",
+                 font=BonsaiTheme.FONTS['heading_small'],
+                 foreground=BonsaiTheme.COLORS['primary_green']).pack(pady=(0, BonsaiTheme.SPACING['md']))
+        
+        instructions = """1. Remove the sensor from any soil or water
+2. Wipe it completely dry with a paper towel
+3. Hold it in the air
+
+The sensor should be completely dry for accurate calibration."""
+        
+        ttk.Label(self.cal_content_frame, text=instructions,
+                 font=BonsaiTheme.FONTS['body'],
+                 justify="left").pack(pady=BonsaiTheme.SPACING['md'])
+        
+        # Live reading display
+        reading_frame = ttk.LabelFrame(self.cal_content_frame, 
+                                     text="  Live Sensor Reading  ",
+                                     padding=BonsaiTheme.SPACING['md'])
+        reading_frame.pack(fill="x", pady=BonsaiTheme.SPACING['lg'])
+        
+        self.cal_live_label = ttk.Label(reading_frame, 
+                                      text="Raw ADC: -----",
+                                      font=BonsaiTheme.FONTS['heading_small'])
+        self.cal_live_label.pack()
+        
+        # Progress
+        self.cal_progress_label = ttk.Label(self.cal_content_frame,
+                                          text="Click 'Next' when sensor is dry",
+                                          font=BonsaiTheme.FONTS['body'],
+                                          foreground=BonsaiTheme.COLORS['text_muted'])
+        self.cal_progress_label.pack()
+        
+        self.cal_current_step = "dry"
+        self.cal_dry_values = []
+        
+        # Start reading values
+        self._update_cal_reading()
+    
+    def _show_cal_wet(self):
+        """Show wet calibration step"""
+        for widget in self.cal_content_frame.winfo_children():
+            widget.destroy()
+        
+        # Instructions
+        ttk.Label(self.cal_content_frame,
+                 text="Step 2: Wet Calibration",
+                 font=BonsaiTheme.FONTS['heading_small'],
+                 foreground=BonsaiTheme.COLORS['primary_green']).pack(pady=(0, BonsaiTheme.SPACING['md']))
+        
+        instructions = """1. Fill a glass with water
+2. Insert the sensor into the water
+3. Submerge ONLY up to the line on the sensor PCB
+4. DO NOT submerge the electronic components!
+
+The sensor should be steady in the water."""
+        
+        ttk.Label(self.cal_content_frame, text=instructions,
+                 font=BonsaiTheme.FONTS['body'],
+                 justify="left").pack(pady=BonsaiTheme.SPACING['md'])
+        
+        # Warning
+        warning_frame = ttk.Frame(self.cal_content_frame)
+        warning_frame.pack(fill="x", pady=BonsaiTheme.SPACING['md'])
+        
+        ttk.Label(warning_frame, text="⚠️",
+                 font=("Arial", 16),
+                 foreground=BonsaiTheme.COLORS['warning']).pack(side="left")
+        
+        ttk.Label(warning_frame, 
+                 text="Only submerge the metal probes, not the circuit board!",
+                 font=BonsaiTheme.FONTS['body_bold'],
+                 foreground=BonsaiTheme.COLORS['warning']).pack(side="left", padx=(BonsaiTheme.SPACING['sm'], 0))
+        
+        # Live reading display
+        reading_frame = ttk.LabelFrame(self.cal_content_frame,
+                                     text="  Live Sensor Reading  ",
+                                     padding=BonsaiTheme.SPACING['md'])
+        reading_frame.pack(fill="x", pady=BonsaiTheme.SPACING['lg'])
+        
+        self.cal_live_label = ttk.Label(reading_frame,
+                                      text="Raw ADC: -----", 
+                                      font=BonsaiTheme.FONTS['heading_small'])
+        self.cal_live_label.pack()
+        
+        # Progress
+        self.cal_progress_label = ttk.Label(self.cal_content_frame,
+                                          text="Click 'Next' when sensor is in water",
+                                          font=BonsaiTheme.FONTS['body'],
+                                          foreground=BonsaiTheme.COLORS['text_muted'])
+        self.cal_progress_label.pack()
+        
+        self.cal_current_step = "wet"
+        self.cal_wet_values = []
+        
+        # Continue reading values
+        self._update_cal_reading()
+    
+    def _show_cal_complete(self, cal_window):
+        """Show calibration complete with results"""
+        for widget in self.cal_content_frame.winfo_children():
+            widget.destroy()
+        
+        # Calculate averages
+        dry_avg = int(sum(self.cal_dry_values) / len(self.cal_dry_values))
+        wet_avg = int(sum(self.cal_wet_values) / len(self.cal_wet_values))
+        
+        # Results
+        ttk.Label(self.cal_content_frame,
+                 text="✅ Calibration Complete!",
+                 font=BonsaiTheme.FONTS['heading_small'],
+                 foreground=BonsaiTheme.COLORS['success']).pack(pady=(0, BonsaiTheme.SPACING['lg']))
+        
+        # Show results
+        results_frame = ttk.LabelFrame(self.cal_content_frame,
+                                     text="  Calibration Results  ",
+                                     padding=BonsaiTheme.SPACING['lg'])
+        results_frame.pack(fill="x", pady=BonsaiTheme.SPACING['md'])
+        
+        ttk.Label(results_frame, 
+                 text=f"Dry Value (in air): {dry_avg}",
+                 font=BonsaiTheme.FONTS['body_bold']).pack(anchor="w")
+        
+        ttk.Label(results_frame,
+                 text=f"Wet Value (in water): {wet_avg}",
+                 font=BonsaiTheme.FONTS['body_bold']).pack(anchor="w")
+        
+        # Validate
+        range_val = abs(dry_avg - wet_avg)
+        if range_val < 1000:
+            ttk.Label(results_frame,
+                     text="⚠️ Warning: Small range detected. Sensor may have issues.",
+                     font=BonsaiTheme.FONTS['body'],
+                     foreground=BonsaiTheme.COLORS['warning']).pack(anchor="w", pady=(BonsaiTheme.SPACING['md'], 0))
+        else:
+            ttk.Label(results_frame,
+                     text=f"✅ Good range: {range_val} ADC units",
+                     font=BonsaiTheme.FONTS['body'],
+                     foreground=BonsaiTheme.COLORS['success']).pack(anchor="w", pady=(BonsaiTheme.SPACING['md'], 0))
+        
+        # Test with new values
+        ttk.Label(self.cal_content_frame,
+                 text="Test your new calibration:",
+                 font=BonsaiTheme.FONTS['body_bold'],
+                 foreground=BonsaiTheme.COLORS['text_primary']).pack(pady=(BonsaiTheme.SPACING['lg'], BonsaiTheme.SPACING['sm']))
+        
+        test_frame = ttk.Frame(self.cal_content_frame)
+        test_frame.pack(fill="x")
+        
+        self.cal_test_label = ttk.Label(test_frame,
+                                      text="Calculating...",
+                                      font=BonsaiTheme.FONTS['heading_small'])
+        self.cal_test_label.pack()
+        
+        # Store values for saving
+        self.new_dry_value = dry_avg
+        self.new_wet_value = wet_avg
+        
+        # Change button to "Save"
+        self.cal_next_btn.config(text="💾 Save Calibration",
+                               command=lambda: self._save_calibration(cal_window))
+        
+        # Update test display
+        self._test_new_calibration()
+    
+    def _test_new_calibration(self):
+        """Test the new calibration values"""
+        if hasattr(self, 'cal_test_label'):
+            try:
+                raw = self.app.sensor.read_raw_adc()
+                if raw is not None:
+                    # Calculate with new values
+                    moisture = (self.new_dry_value - raw) / (self.new_dry_value - self.new_wet_value) * 100
+                    moisture = max(0, min(100, moisture))
+                    
+                    # Determine condition
+                    if moisture < 10:
+                        condition = "Very Dry (air)"
+                        color = BonsaiTheme.COLORS['error']
+                    elif moisture < 30:
+                        condition = "Dry"
+                        color = BonsaiTheme.COLORS['warning']
+                    elif moisture < 70:
+                        condition = "Good"
+                        color = BonsaiTheme.COLORS['success']
+                    else:
+                        condition = "Wet"
+                        color = BonsaiTheme.COLORS['info']
+                    
+                    self.cal_test_label.config(
+                        text=f"Current: {moisture:.1f}% - {condition}",
+                        foreground=color
+                    )
+                    
+                # Schedule next update
+                self.frame.after(500, self._test_new_calibration)
+            except:
+                pass
+    
+    def _update_cal_reading(self):
+        """Update live reading during calibration"""
+        if hasattr(self, 'cal_live_label'):
+            try:
+                raw = self.app.sensor.read_raw_adc()
+                if raw is not None:
+                    self.cal_live_label.config(text=f"Raw ADC: {raw}")
+                    
+                    # Collect values
+                    if self.cal_current_step == "dry":
+                        self.cal_dry_values.append(raw)
+                        if len(self.cal_dry_values) > 20:
+                            self.cal_dry_values.pop(0)
+                    elif self.cal_current_step == "wet":
+                        self.cal_wet_values.append(raw)
+                        if len(self.cal_wet_values) > 20:
+                            self.cal_wet_values.pop(0)
+                else:
+                    self.cal_live_label.config(text="Raw ADC: ERROR")
+                
+                # Schedule next update
+                self.frame.after(250, self._update_cal_reading)
+            except:
+                pass
+    
+    def _cal_next_step(self, cal_window):
+        """Move to next calibration step"""
+        if self.cal_current_step == "intro":
+            self._show_cal_dry()
+        elif self.cal_current_step == "dry":
+            if len(self.cal_dry_values) < 5:
+                self._update_cal_status("Please wait for sensor readings...", "warning")
+                return
+            self._show_cal_wet()
+        elif self.cal_current_step == "wet":
+            if len(self.cal_wet_values) < 5:
+                self._update_cal_status("Please wait for sensor readings...", "warning")
+                return
+            self._show_cal_complete(cal_window)
+    
+    def _save_calibration(self, cal_window):
+        """Save the new calibration values"""
+        try:
+            # Update config
+            self.app.config_manager.update('sensor',
+                                         calibration_dry=self.new_dry_value,
+                                         calibration_wet=self.new_wet_value)
+            
+            # Update sensor
+            self.app.sensor.calibrate(self.new_dry_value, self.new_wet_value)
+            
+            # Update display
+            self._update_calibration_display()
+            
+            # Show success
+            self._update_cal_status("✅ Calibration saved successfully!", "success")
+            
+            # Close window
+            cal_window.destroy()
+            
+        except Exception as e:
+            self._update_cal_status(f"❌ Error saving: {str(e)}", "error")
+    
+    def _update_cal_status(self, message, status_type):
+        """Update calibration status message"""
+        colors = {
+            "success": BonsaiTheme.COLORS['success'],
+            "error": BonsaiTheme.COLORS['error'],
+            "warning": BonsaiTheme.COLORS['warning'],
+            "info": BonsaiTheme.COLORS['info']
+        }
+        
+        self.cal_status.config(text=message,
+                             foreground=colors.get(status_type, BonsaiTheme.COLORS['text_muted']))
+        
+        # Clear after 5 seconds for non-error messages  
+        if status_type != "error":
+            self.frame.after(5000, lambda: self.cal_status.config(text=""))
 
 
 class BonsaiAssistantApp:
@@ -910,8 +1631,9 @@ class BonsaiAssistantApp:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("🌱 Bonsai Assistant Professional v2.0")
-        self.root.geometry("1100x750")  # More compact but still roomy
-        self.root.minsize(900, 650)
+        # FIXED: Larger default size and better minimum
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 700)
         
         # Setup professional styling
         self.style = setup_professional_style(root)
@@ -942,20 +1664,40 @@ class BonsaiAssistantApp:
         self._setup_ui()
         self._setup_callbacks()
         self._start_systems()
+        
+        # FIXED: Start display update loop
+        self._start_display_updates()
     
     def _init_hardware_components(self):
         """Initialize hardware with graceful fallbacks"""
+        # Track initialization status
+        hardware_status = {
+            'sensor': {'real': False, 'error': None},
+            'pump': {'real': False, 'error': None},
+            'display': {'real': False, 'error': None}
+        }
+        
         try:
-            self.sensor = SoilMoistureSensor(channel=self.config.sensor.i2c_channel, debug=False)
+            self.sensor = SoilMoistureSensor(
+                channel=self.config.sensor.i2c_channel, 
+                debug=False,
+                dry_calibration=self.config.sensor.calibration_dry,
+                wet_calibration=self.config.sensor.calibration_wet
+            )
+            hardware_status['sensor']['real'] = True
             print("✅ Real moisture sensor initialized")
+            print(f"   Using calibration: Dry={self.config.sensor.calibration_dry}, Wet={self.config.sensor.calibration_wet}")
         except Exception as e:
+            hardware_status['sensor']['error'] = str(e)
             print(f"⚠️ Sensor init failed, using simulation: {e}")
             self.sensor = MockSoilMoistureSensor(lambda: 45.0)
             
         try:
             self.pump = PumpController(gpio_pin=self.config.pump.gpio_pin)
+            hardware_status['pump']['real'] = True
             print("✅ Real pump controller initialized")
         except Exception as e:
+            hardware_status['pump']['error'] = str(e)
             print(f"⚠️ Pump init failed, using simulation: {e}")
             self.pump = MockPumpController()
             
@@ -965,10 +1707,15 @@ class BonsaiAssistantApp:
                 height=self.config.display.height,
                 rotation=self.config.display.rotation
             )
+            hardware_status['display']['real'] = True
             print("✅ Real display initialized")
         except Exception as e:
+            hardware_status['display']['error'] = str(e)
             print(f"⚠️ Display init failed, using simulation: {e}")
             self.display = MockDisplay()
+        
+        # Store hardware status for UI display
+        self.hardware_status = hardware_status
     
     def _setup_ui(self):
         """Setup beautiful UI with bonsai theme"""
@@ -981,7 +1728,7 @@ class BonsaiAssistantApp:
         self.header.pack(fill="x", padx=BonsaiTheme.SPACING['lg'], 
                         pady=(BonsaiTheme.SPACING['lg'], BonsaiTheme.SPACING['md']))
         
-        # Create notebook with professional tabs
+        # Create notebook with professional tabs - FIXED: expand properly
         self.notebook = ttk.Notebook(main_container)
         
         # Initialize beautiful tabs with FIXED components
@@ -996,12 +1743,51 @@ class BonsaiAssistantApp:
         self.notebook.add(self.controls_tab.frame, text="🎮  Controls") 
         self.notebook.add(self.settings_tab.frame, text="⚙️  Settings")
         
+        # FIXED: Make notebook expand to fill available space
         self.notebook.pack(fill="both", expand=True, 
                           padx=BonsaiTheme.SPACING['lg'],
                           pady=(0, BonsaiTheme.SPACING['lg']))
         
         # Beautiful status bar
         self._create_status_bar()
+        
+        # Setup master scrolling handler
+        self._setup_master_scrolling()
+    
+    def _setup_master_scrolling(self):
+        """Setup SIMPLE master scrolling for all tabs"""
+        def on_mousewheel(event):
+            # Get current tab
+            try:
+                current = self.notebook.index(self.notebook.select())
+                
+                # Find the active canvas
+                canvas = None
+                if current == 1 and hasattr(self.controls_tab, '_canvas'):  # Controls tab
+                    canvas = self.controls_tab._canvas
+                elif current == 2:  # Settings tab - add this!
+                    # Find the canvas in settings tab
+                    for child in self.settings_tab.frame.winfo_children():
+                        if isinstance(child, tk.Canvas):
+                            canvas = child
+                            break
+                # Dashboard has its own scrolling
+                
+                # Scroll the active canvas
+                if canvas and canvas.winfo_exists():
+                    if event.delta:
+                        canvas.yview_scroll(-1*(event.delta//120), "units")
+                    elif event.num == 4:
+                        canvas.yview_scroll(-1, "units")
+                    elif event.num == 5:
+                        canvas.yview_scroll(1, "units")
+            except:
+                pass  # Ignore errors
+        
+        # Bind to root
+        self.root.bind("<MouseWheel>", on_mousewheel)
+        self.root.bind("<Button-4>", on_mousewheel)
+        self.root.bind("<Button-5>", on_mousewheel)
     
     def _create_status_bar(self):
         """Create beautiful status bar"""
@@ -1049,6 +1835,34 @@ class BonsaiAssistantApp:
         self.automation.start_automation()
         self.data_manager.log_system_event("APP_START", 
                                           "Bonsai Assistant Professional started", "INFO")
+    
+    def _start_display_updates(self):
+        """FIXED: Start regular display updates"""
+        def update_display_loop():
+            while True:
+                try:
+                    # Get current status
+                    moisture = self.automation.last_moisture_reading
+                    pump_status = self.pump.get_status()
+                    runtime = self.pump.get_runtime_seconds()
+                    
+                    # Update display
+                    if moisture is not None:
+                        self.display.draw_status(
+                            moisture=moisture,
+                            pump_status=pump_status,
+                            runtime_sec=runtime
+                        )
+                except Exception as e:
+                    print(f"Display update error: {e}")
+                
+                # Wait before next update
+                time.sleep(self.config.display.update_interval)
+        
+        # Start display thread
+        display_thread = threading.Thread(target=update_display_loop, daemon=True)
+        display_thread.start()
+        print("📺 Display update loop started")
     
     def _schedule_ui_updates(self):
         """Schedule regular UI updates"""
@@ -1128,11 +1942,7 @@ class BonsaiAssistantApp:
     
     def _on_moisture_update(self, moisture: float):
         """Handle moisture updates"""
-        self.display.draw_status(
-            moisture=moisture,
-            pump_status=self.pump.get_status(),
-            runtime_sec=self.pump.get_runtime_seconds()
-        )
+        # Display is now updated in the separate display thread
         self.dashboard_tab.on_moisture_update(moisture)
     
     def _show_status(self, message: str, color: str):

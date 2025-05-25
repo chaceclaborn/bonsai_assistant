@@ -1,20 +1,13 @@
 ./
     .gitignore
-    .lgd-nfy0
-    Dockerfile
     README.md
     main.py
     requirements.txt
-services/
-    __init__.py
-    ai_service.py
+    structure_txt_maker.py
 core/
     __init__.py
-    assistant.py
     automation_controller.py
     data_manager.py
-    speech_processing.py
-    test_tools.py
     timing.py
 hardware/
     __init__.py
@@ -23,24 +16,15 @@ hardware/
         rgb_display_driver.py
     sensors/
         __init__.py
-        light_sensor.py
         soil_moisture_sensor.py
-    audio/
-        __init__.py
-        microphone.py
-        speaker.py
     actuators/
         __init__.py
         pump_controller.py
-tests/
-    __init__.py
-    test_assistant.py
-    test_audio.py
-    test_display.py
 ui/
     __init__.py
     dashboard_tab.py
     mini_status_widget.py
+    professional_theme.py
 config/
     __init__.py
     app_config.py
@@ -50,16 +34,6 @@ simulation/
     mock_display.py
     mock_pump.py
     mock_sensor.py
-knowledge/
-    __init__.py
-    bonsai.py
-    knowledge_base.py
-utils/
-    __init__.py
-    file_utils.py
-    logging_utils.py
-    status_icons.py
-    text_processing.py
 data/
     bonsai_data.db
 logs/

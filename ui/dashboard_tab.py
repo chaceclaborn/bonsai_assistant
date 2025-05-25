@@ -379,11 +379,50 @@ class DashboardTab:
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        
+        # Make scrollable frame expand to canvas width
+        def configure_scroll_region(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            canvas_width = canvas.winfo_width()
+            if canvas_width > 0:
+                canvas.itemconfig(canvas_window, width=canvas_width)
+        
+        canvas.bind('<Configure>', configure_scroll_region)
         canvas.configure(yscrollcommand=scrollbar.set)
         
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+        
+        # FIXED: Proper mouse wheel scrolling
+        def _on_mousewheel(event):
+            # Windows
+            if event.delta:
+                canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            # Linux
+            else:
+                if event.num == 4:
+                    canvas.yview_scroll(-1, "units")
+                elif event.num == 5:
+                    canvas.yview_scroll(1, "units")
+        
+        # Bind mouse wheel to canvas and all its children
+        def bind_mouse_wheel(widget):
+            # Windows
+            widget.bind("<MouseWheel>", _on_mousewheel)
+            # Linux
+            widget.bind("<Button-4>", _on_mousewheel)
+            widget.bind("<Button-5>", _on_mousewheel)
+            # Bind to all children recursively
+            for child in widget.winfo_children():
+                bind_mouse_wheel(child)
+        
+        # Initial binding
+        bind_mouse_wheel(canvas)
+        bind_mouse_wheel(scrollable_frame)
+        
+        # Re-bind when new widgets are added
+        scrollable_frame.bind("<Map>", lambda e: bind_mouse_wheel(scrollable_frame))
         
         # Create dashboard sections
         self._create_system_status(scrollable_frame)
