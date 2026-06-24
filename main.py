@@ -1664,9 +1664,42 @@ class BonsaiAssistantApp:
         self._setup_ui()
         self._setup_callbacks()
         self._start_systems()
-        
+
         # FIXED: Start display update loop
         self._start_display_updates()
+
+        # AI service + REST/WebSocket API for the Next.js dashboard.
+        # Both fail gracefully if optional deps are missing (anthropic, fastapi, uvicorn).
+        self._start_optional_services()
+
+    def _start_optional_services(self):
+        """Start the AI service and FastAPI server if their deps are installed."""
+        self.ai_service = None
+        self.api_thread = None
+
+        try:
+            from services.ai_service import BonsaiAIService
+            self.ai_service = BonsaiAIService(self.data_manager, self.automation)
+            print(f"✅ AI service ready (available={self.ai_service.available})")
+        except Exception as e:
+            print(f"⚠️ AI service not started: {e}")
+
+        try:
+            from api.server import create_app, start_in_background
+            app = create_app(
+                automation=self.automation,
+                data_manager=self.data_manager,
+                pump=self.pump,
+                sensor=self.sensor,
+                ai_service=self.ai_service,
+                config=self.config,
+            )
+            self.api_thread = start_in_background(app, host="0.0.0.0", port=8000)
+            print("✅ API server listening on http://0.0.0.0:8000")
+        except ImportError as e:
+            print(f"⚠️ API server not started (install fastapi + uvicorn): {e}")
+        except Exception as e:
+            print(f"⚠️ API server failed to start: {e}")
     
     def _init_hardware_components(self):
         """Initialize hardware with graceful fallbacks"""

@@ -5,7 +5,9 @@ import time
 
 class MockSoilMoistureSensor:
     """Mock soil moisture sensor for testing with live value updates"""
-    
+
+    is_simulated = True
+
     def __init__(self, moisture_func=None):
         self.moisture_func = moisture_func or self._default_moisture
         self.available = True

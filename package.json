@@ -1,0 +1,15 @@
+{
+  "name": "bonsai-assistant",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Root launcher for the Bonsai Assistant — delegates to the Next.js dashboard, which starts the Python FastAPI server and web UI together.",
+  "scripts": {
+    "dev": "npm --prefix dashboard run dev",
+    "dev:no-open": "npm --prefix dashboard run dev:no-open",
+    "dev:api": "npm --prefix dashboard run dev:api",
+    "dev:web": "npm --prefix dashboard run dev:web",
+    "build": "npm --prefix dashboard run build",
+    "start": "npm --prefix dashboard run start",
+    "install:all": "npm --prefix dashboard install"
+  }
+}

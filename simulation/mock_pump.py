@@ -1,4 +1,6 @@
 class MockPumpController:
+    is_simulated = True
+
     def __init__(self):
         self._status = "OFF"
         self._runtime = 0

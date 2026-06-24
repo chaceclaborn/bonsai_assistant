@@ -17,3 +17,17 @@ wheel==0.45.1
 Pillow==10.0.0
 gpiozero==2.0.1
 lgpio==0.2.2.0
+
+# AI service
+anthropic>=0.40.0
+
+# FastAPI server (Next.js dashboard backend)
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+
+# Sensor I2C / ADC (real hardware on Pi)
+adafruit-circuitpython-ads1x15>=2.4.0
+
+# Tests
+pytest>=8.0.0
+httpx>=0.27.0

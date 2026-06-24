@@ -18,8 +18,10 @@ class SoilMoistureSensor:
     """
     Enhanced soil moisture sensor with better error handling
     """
-    
-    def __init__(self, i2c_bus=None, channel=0, debug=True, 
+
+    is_simulated = False
+
+    def __init__(self, i2c_bus=None, channel=0, debug=True,
                  dry_calibration=32000, wet_calibration=12000):
         """
         Initialize sensor with configurable calibration values
